@@ -56,6 +56,16 @@ static void init_heap(void) {
 
 //HELPER FUNCTIONS
 
+//is the pointer at the start of a chunk/valid?
+static int is_valid(void *ptr){
+  for(header *curr = heap_start; curr; curr=curr->next){
+    if(!curr->is_free && (char *)curr + sizeof(header) == ptr){
+      return 1; //valid ptr
+    }
+  }
+  return 0; //not valid ptr
+}
+
 // Get header from pointer
 static header *ptr_to_header(void *ptr) {
     if (!ptr) return NULL;
@@ -119,6 +129,12 @@ void myfree(void *ptr, char *file, int line) {
         exit(2);
     }
 
+    //check to see if the ptr is at start of a chunk
+    if(!is_valid_pointer(ptr)){
+      fprintf(stderr, "free: Inappropriate pointer. Not at start of chunk. (%s:%d)\n", file, line);
+      exit(2);
+      }
+
     header *h = ptr_to_header(ptr);
     
     //double free detection
@@ -126,7 +142,7 @@ void myfree(void *ptr, char *file, int line) {
         fprintf(stderr, "free: Innappropriate pointer. Double free detected. (%s:%d)\n", file, line);
         exit(2);
     }
-
+    //free block + coalesce chunks
     h->is_free = 1;
     coalesce();
 }
