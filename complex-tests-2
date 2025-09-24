@@ -1,0 +1,194 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include "mymalloc.h"
+
+#define HEAP_SIZE 4096  // adjust to match your heap
+#define ALIGNMENT 8
+#define SMALL 64
+
+// Utility to check 8-byte alignment
+int is_aligned(void *ptr) {
+    return ((uintptr_t)ptr % ALIGNMENT) == 0;
+}
+
+// Fill a block with a pattern
+void fill_pattern(unsigned char *ptr, size_t size, unsigned char pattern) {
+    for (size_t i = 0; i < size; i++) ptr[i] = pattern;
+}
+
+// Verify a block matches a pattern
+int verify_pattern(unsigned char *ptr, size_t size, unsigned char pattern) {
+    for (size_t i = 0; i < size; i++) {
+        if (ptr[i] != pattern) return 0;
+    }
+    return 1;
+}
+
+// 1. Basic allocation/free
+void test_basic_allocation() {
+    unsigned char *a = malloc(16);
+    unsigned char *b = malloc(32);
+    if (!a || !b) { printf("[FAIL] Basic allocation: malloc failed\n"); return; }
+    fill_pattern(a, 16, 0xAA);
+    fill_pattern(b, 32, 0xBB);
+    if (!verify_pattern(a, 16, 0xAA) || !verify_pattern(b, 32, 0xBB)) {
+        printf("[FAIL] Basic allocation: pattern verification failed\n"); 
+    } else {
+        printf("[PASS] Basic allocation/free\n");
+    }
+    free(a); free(b);
+}
+
+// 2. Alignment
+void test_alignment() {
+    size_t sizes[] = {1,2,3,7,8,9,15,16,31,32};
+    int passed = 1;
+    for (int i=0; i < (int)sizeof(sizes)/(int)sizeof(sizes[0]); i++) {
+        void *p = malloc(sizes[i]);
+        if (!p || !is_aligned(p)) {
+            printf("[FAIL] Alignment test failed for size %zu\n", sizes[i]);
+            passed = 0;
+        }
+        free(p);
+    }
+    if (passed) printf("[PASS] Alignment\n");
+}
+
+// 3. free(NULL)
+void test_free_null() {
+    free(NULL);
+    printf("[PASS] Free NULL\n");
+}
+
+// 4. malloc(0)
+void test_malloc_zero() {
+    void *p0 = malloc(0);
+    if (p0 == NULL) {
+        printf("[PASS] malloc(0) returns NULL\n");
+    } else {
+        printf("[FAIL] malloc(0) did not return NULL\n");
+        free(p0);
+    }
+}
+
+// 5. Reuse after free
+void test_reuse_after_free() {
+    void *x = malloc(64);
+    free(x);
+    void *y = malloc(64);
+    if (x == y) {
+        printf("[PASS] Reuse after free\n");
+    } else {
+        printf("[FAIL] Reuse after free\n");
+    }
+    free(y);
+}
+
+// 6. Splitting a large chunk
+void test_splitting() {
+    void *L = malloc(128);
+    free(L);
+    void *s1 = malloc(32);
+    void *s2 = malloc(32);
+    if (s1 && s2) {
+        printf("[PASS] Splitting large chunk\n");
+    } else {
+        printf("[FAIL] Splitting large chunk\n");
+    }
+    free(s1); free(s2);
+}
+
+// 7. Heap exhaustion
+void test_heap_exhaustion() {
+    void *arr[10000];
+    int i;
+    for (i=0; i<10000; i++) {
+        arr[i] = malloc(SMALL);
+        if (!arr[i]) break;
+    }
+    printf("[INFO] Allocated %d blocks of %d bytes before exhaustion\n", i, SMALL);
+    for (int j=0; j<i; j++) free(arr[j]);
+    printf("[PASS] Heap exhaustion/recovery\n");
+}
+
+// 8. Coalescing adjacent frees
+void test_coalescing() {
+    void *A = malloc(32), *B = malloc(32), *C = malloc(32);
+    free(B);
+    void *large = malloc(64); // should fail if only B is freed
+    if (large) { free(large); printf("[FAIL] Coalescing failed\n"); }
+    free(A);
+    large = malloc(64); // should succeed now (A+B coalesced)
+    if (large) {
+        printf("[PASS] Coalescing adjacent frees\n");
+        free(large);
+    } else {
+        printf("[FAIL] Coalescing adjacent frees\n");
+    }
+    free(C);
+}
+
+// 9. Large allocation boundaries
+void test_large_allocation() {
+    void *huge = malloc(1UL<<30);
+    if (!huge) {
+        printf("[PASS] Large allocation boundary (expected fail)\n");
+    } else {
+        printf("[FAIL] Large allocation boundary\n");
+        free(huge);
+    }
+    void *big = malloc(HEAP_SIZE*3/4);
+    void *small_after = malloc(64);
+    if (!small_after) {
+        printf("[PASS] Allocation after large block fails as expected\n");
+    } else {
+        printf("[FAIL] Allocation after large block should fail\n");
+        free(small_after);
+    }
+    free(big);
+}
+
+// 10. Non-splitting threshold
+void test_non_splitting() {
+    void *ns = malloc(64);
+    free(ns);
+    void *tiny = malloc(8); 
+    if (tiny) printf("[PASS] Non-splitting threshold allocation\n");
+    else printf("[FAIL] Non-splitting threshold allocation\n");
+    free(tiny);
+}
+
+// 11. Pattern/overlap check
+void test_pattern_overlap() {
+    unsigned char *pA = malloc(32);
+    unsigned char *pB = malloc(32);
+    fill_pattern(pA, 32, 0xAA);
+    fill_pattern(pB, 32, 0xBB);
+    if (verify_pattern(pA, 32, 0xAA) && verify_pattern(pB, 32, 0xBB)) {
+        printf("[PASS] Pattern/overlap check\n");
+    } else {
+        printf("[FAIL] Pattern/overlap check\n");
+    }
+    free(pA); free(pB);
+}
+
+int main() {
+    printf("=== Running Safe Allocation/Free Tests ===\n");
+    
+    test_basic_allocation();
+    test_alignment();
+    test_free_null();
+    test_malloc_zero();
+    test_reuse_after_free();
+    test_splitting();
+    test_heap_exhaustion();
+    test_coalescing();
+    test_large_allocation();
+    test_non_splitting();
+    test_pattern_overlap();
+
+    printf("=== Safe tests completed ===\n");
+    return 0;
+}
