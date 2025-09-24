@@ -130,7 +130,7 @@ void myfree(void *ptr, char *file, int line) {
     }
 
     //check to see if the ptr is at start of a chunk
-    if(!is_valid_pointer(ptr)){
+    if(!is_valid(ptr)){
       fprintf(stderr, "free: Inappropriate pointer. Not at start of chunk. (%s:%d)\n", file, line);
       exit(2);
       }
