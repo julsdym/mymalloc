@@ -1,0 +1,2 @@
+1. fix coalescing: currently only shifts adjacent chunks
+2. keep track of heap/memory in some sort of way?
