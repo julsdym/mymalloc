@@ -7,7 +7,7 @@
 #define MEMLENGTH 4096
 static union {
     char bytes[MEMLENGTH];
-    double align;   // ensures max alignment
+    double not_used;
 } heap;
 
 typedef struct header {
