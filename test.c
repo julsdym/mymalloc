@@ -58,6 +58,12 @@ int main(){
     char *p11 = malloc(250);
     (void)p11; 
     */
+
+    //8: freeing address, but not at start of chunk
+    /*
+    void *p = malloc(50);
+    free((char *)p + 5);
+    */
     
 
     return 0;
