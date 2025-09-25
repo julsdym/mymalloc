@@ -7,21 +7,38 @@
 #define MEMLENGTH 4096
 static union {
     char bytes[MEMLENGTH];
-    double not_used; // ensures 8-byte alignment
+    double not_used; 
 } heap;
 
 typedef struct header {
-    size_t size;
-    int is_free; // 1 = free, 0 = allocated
+    size_t size;       
+    int is_free;        // 1 = free, 0 = allocated
 } header;
 
-// Align size up to multiple of 8
+// Align any size up to multiple of 8
 static inline size_t align8(size_t n) {
     return (n + 7) & ~7;
 }
 
 // Global heap state
+static header *heap_start = NULL;
 static int heap_initialized = 0;
+
+// Get next header in heap (returns NULL if at end)
+static header *get_next_header(header *curr) {
+    char *next_addr = (char *)curr + curr->size;
+    char *heap_end = heap.bytes + MEMLENGTH;
+    
+    if (next_addr >= heap_end) {
+        return NULL; // Past end of heap
+    }
+    return (header *)next_addr;
+}
+
+// Get first header in heap
+static header *get_first_header(void) {
+    return heap_start;
+}
 
 // Leak checker
 void check_leaks(void) {
@@ -29,20 +46,17 @@ void check_leaks(void) {
 
     size_t leaked_bytes = 0;
     size_t leaked_objs = 0;
-
-    char *curr_ptr = heap.bytes;
-    while (curr_ptr < heap.bytes + MEMLENGTH) {
-        header *curr = (header *)curr_ptr;
-        if (curr->size == 0) break; // end of initialized heap
+    
+    for (header *curr = get_first_header(); curr; curr = get_next_header(curr)) {
         if (!curr->is_free) {
-            leaked_bytes += curr->size;
+            leaked_bytes += curr->size - sizeof(header);
             leaked_objs++;
         }
-        curr_ptr += sizeof(header) + curr->size;
     }
-
+    
     if (leaked_objs > 0) {
-        fprintf(stderr, "mymalloc: %zu bytes leaked in %zu objects.\n",
+        fprintf(stderr,
+                "mymalloc: %zu bytes leaked in %zu objects.\n",
                 leaked_bytes, leaked_objs);
     }
 }
@@ -50,89 +64,78 @@ void check_leaks(void) {
 // Initialize heap
 static void init_heap(void) {
     if (heap_initialized) return;
-    header *first = (header *)heap.bytes;
-    first->size = MEMLENGTH - sizeof(header);
-    first->is_free = 1;
+    heap_start = (header *)heap.bytes;
+    heap_start->size = MEMLENGTH; 
+    heap_start->is_free = 1;
     heap_initialized = 1;
     atexit(check_leaks);
 }
 
-// Helper: find a valid header for a pointer
+// Validate pointer, return header if valid
 static header *get_valid_header(void *ptr) {
     if (!ptr) return NULL;
 
-    char *curr_ptr = heap.bytes;
-    while (curr_ptr < heap.bytes + MEMLENGTH) {
-        header *curr = (header *)curr_ptr;
-        if (curr->size == 0) break;
-        if ((char *)curr + sizeof(header) == (char *)ptr)
-            return curr;
-        curr_ptr += sizeof(header) + curr->size;
-    }
-    return NULL;
-}
-
-// Split a free chunk if large enough
-static void split_chunk(header *chunk, size_t req_size) {
-    if (chunk->size >= req_size + sizeof(header) + 8) {
-        header *new_chunk = (header *)((char *)chunk + sizeof(header) + req_size);
-        new_chunk->size = chunk->size - req_size - sizeof(header);
-        new_chunk->is_free = 1;
-        chunk->size = req_size;
-    }
-}
-
-// Find next chunk in memory
-static header *next_chunk(header *curr) {
-    char *next = (char *)curr + sizeof(header) + curr->size;
-    if (next >= heap.bytes + MEMLENGTH) return NULL;
-    header *n = (header *)next;
-    if ((char *)n + sizeof(header) > heap.bytes + MEMLENGTH) return NULL;
-    return n;
-}
-
-// Coalesce adjacent free chunks
-static void coalesce(void) {
-    char *curr_ptr = heap.bytes;
-    while (curr_ptr < heap.bytes + MEMLENGTH) {
-        header *curr = (header *)curr_ptr;
-        if (curr->size == 0) break;
-        header *next = next_chunk(curr);
-        if (!next) break;
-        if (curr->is_free && next->is_free) {
-            curr->size += sizeof(header) + next->size;
-            continue; // check new next
+    for (header *curr = get_first_header(); curr; curr = get_next_header(curr)) {
+        if ((char *)curr + sizeof(header) == (char *)ptr) {
+            return curr; 
         }
-        curr_ptr += sizeof(header) + curr->size;
+    }
+    return NULL; 
+}
+
+// Split a free chunk if it's large enough
+static void split_chunk(header *chunk, size_t req_size) {
+    size_t total_req = sizeof(header) + align8(req_size);
+    size_t min_remaining = sizeof(header) + 8; // Minimum size for a new block
+
+    if (chunk->size >= total_req + min_remaining) {
+        // Create new header at the split point
+        header *new_header = (header *)((char *)chunk + total_req);
+        new_header->size = chunk->size - total_req;
+        new_header->is_free = 1;
+        
+        // Update current chunk size
+        chunk->size = total_req;
     }
 }
 
-// malloc implementation
+// Merge adjacent free chunks
+static void coalesce(void) {
+    for (header *curr = get_first_header(); curr; curr = get_next_header(curr)) {
+        if (curr->is_free) {
+            header *next = get_next_header(curr);
+            
+            // Merge with consecutive free blocks
+            while (next && next->is_free) {
+                curr->size += next->size;
+                next = get_next_header(curr); // Get new next after merger
+            }
+        }
+    }
+}
+
 void *mymalloc(size_t size, char *file, int line) {
     if (!heap_initialized) init_heap();
     if (size == 0) return NULL;
 
     size = align8(size);
+    size_t total_req = sizeof(header) + size;
 
-    char *curr_ptr = heap.bytes;
-    while (curr_ptr < heap.bytes + MEMLENGTH) {
-        header *curr = (header *)curr_ptr;
-        if (curr->size == 0) break;
-        if (curr->is_free && curr->size >= size) {
+    for (header *curr = get_first_header(); curr; curr = get_next_header(curr)) {
+        if (curr->is_free && curr->size >= total_req) {
             split_chunk(curr, size);
             curr->is_free = 0;
             return (char *)curr + sizeof(header);
         }
-        curr_ptr += sizeof(header) + curr->size;
     }
 
-    fprintf(stderr, "malloc: Unable to allocate %zu bytes (%s:%d)\n", size, file, line);
+    fprintf(stderr, "malloc: Unable to allocate %zu bytes (%s:%d)\n",
+            size, file, line);
     return NULL;
 }
 
-// free implementation
 void myfree(void *ptr, char *file, int line) {
-    if (!ptr) return;
+    if (ptr == NULL) return;
 
     if ((char *)ptr < heap.bytes || (char *)ptr >= heap.bytes + MEMLENGTH) {
         fprintf(stderr, "free: Inappropriate pointer (%s:%d)\n", file, line);
@@ -140,14 +143,17 @@ void myfree(void *ptr, char *file, int line) {
     }
 
     header *h = get_valid_header(ptr);
+
     if (!h) {
-        fprintf(stderr, "free: Inappropriate pointer. Not at start of chunk (%s:%d)\n",
+        fprintf(stderr,
+                "free: Inappropriate pointer. Not at start of chunk. (%s:%d)\n",
                 file, line);
         exit(2);
     }
 
     if (h->is_free) {
-        fprintf(stderr, "free: Inappropriate pointer. Double free detected (%s:%d)\n",
+        fprintf(stderr,
+                "free: Inappropriate pointer. Double free detected. (%s:%d)\n",
                 file, line);
         exit(2);
     }
