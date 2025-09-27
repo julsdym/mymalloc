@@ -3,12 +3,13 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include "malloc.h"
 
 #define HEAP_SIZE 4096
 
 // Helper macro for alignment check
-#define IS_ALIGNED(ptr, alignment) (((uintptr_t)(ptr) % (alignment)) == 0)
+#define IS_ALIGNED(ptr) (((uintptr_t)(ptr) % (8)) == 0)
 
 // Basic allocation and free
 void test_basic_allocation() {
@@ -24,7 +25,7 @@ void test_alignment() {
     for (int i = 1; i <= 256; i *= 2) {
         void *ptr = malloc(i);
         assert(ptr != NULL);
-        assert(IS_ALIGNED(ptr, 8));
+        assert(IS_ALIGNED(ptr));
         free(ptr);
     }
 }
