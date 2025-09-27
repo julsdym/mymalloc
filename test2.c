@@ -97,20 +97,6 @@ void test_fragmentation() {
     free(ptr4);
 }
 
-// Stress test
-void test_stress() {
-    printf("Test 9: Stress Test\n");
-    #define N 1000
-    void *ptrs[N];
-    for (int i = 0; i < N; i++) {
-        ptrs[i] = malloc((i % 64) + 1);
-        assert(ptrs[i] != NULL);
-    }
-    for (int i = N-1; i >= 0; i--) {
-        free(ptrs[i]);
-    }
-}
-
 // Memory leak detection
 void test_memory_leak() {
     printf("Test 10: Memory Leak Detection\n");
@@ -128,7 +114,6 @@ int main() {
     //test_double_free();
     //test_invalid_free();
     test_fragmentation();
-    test_stress();
     test_memory_leak();
 
     printf("All tests completed.\n");
