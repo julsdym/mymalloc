@@ -136,6 +136,55 @@ void test_memory_leak() {
     free(ptr);
 }
 
+// Allocation larger than heap
+void test_too_large() {
+    printf("Test 13: Too Large Allocation\n");
+    void *p = malloc(9999999);
+    assert(p == NULL);
+}
+
+void test_reuse_memory() {
+    printf("Test 14: Memory Reuse\n");
+    void *p1 = malloc(128);
+    free(p1);
+    void *p2 = malloc(128);
+    assert(p1 == p2);  // should reuse same spot
+    free(p2);
+}
+
+// Ensures blocks are filled with distinct byte patterns
+void test_pattern() {
+    printf("Test 15: Distinct Byte Patterns\n");
+    char *ptrs[10];
+    int i;
+    
+    // Allocate several chunks
+    for (i = 0; i < 10; i++) {
+        ptrs[i] = malloc(50);
+        if (!ptrs[i]) break;
+    }
+    
+    // Fill each with a unique pattern
+    for (int j = 0; j < i; j++) {
+        memset(ptrs[j], j + 1, 50);
+    }
+    
+    // Check patterns are intact
+    int overlap_detected = 0;
+    for (int j = 0; j < i; j++) {
+        for (int k = 0; k < 50; k++) {
+            if (ptrs[j][k] != (char)(j + 1)) {
+                overlap_detected = 1;
+                break;
+            }
+        }
+        if (overlap_detected) break;
+    }
+    for (int j = 0; j < i; j++) {
+        free(ptrs[j]);
+    }
+}
+
 int main() {
     test_basic_allocation();
     test_multiple_allocation();
@@ -149,7 +198,9 @@ int main() {
     //test_free_add()
     test_fragmentation();
     test_memory_leak();
-
+    test_too_large();
+    test_reuse_memory();
+    test_pattern();
     printf("All tests completed.\n");
     return 0;
 }
