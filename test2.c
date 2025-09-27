@@ -6,8 +6,6 @@
 #include <stdbool.h>
 #include "malloc.h"
 
-#define HEAP_SIZE 4096
-
 // Helper macro for alignment check
 #define IS_ALIGNED(ptr) (((uintptr_t)(ptr) % (8)) == 0)
 
@@ -39,24 +37,24 @@ void test_coalescing() {
 
     free(a);
     free(c);
-    free(b); // After freeing b, a, b, c should coalesce
-    // Optional: check internal free memory if tracked
+    free(b); 
 }
 
 // Zero-byte allocation
 void test_zero_allocation() {
     printf("Test 4: Zero-byte Allocation\n");
     void *ptr = malloc(0);
-    // Implementation dependent: may return NULL or a valid pointer
+    void *x = malloc(NULL);
+    free(x);
     free(ptr);
 }
 
 // Large allocation / heap exhaustion
 void test_heap_exhaustion() {
     printf("Test 5: Heap Exhaustion\n");
-    void *ptrs[HEAP_SIZE / 8]; // Max possible small allocations
+    void *ptrs[4096 / 8]; 
     int i = 0;
-    while (i < HEAP_SIZE / 8) {
+    while (i < 4096 / 8) {
         ptrs[i] = malloc(8);
         if (!ptrs[i]) break;
         i++;
@@ -71,7 +69,6 @@ void test_double_free() {
     printf("Test 6: Double Free Detection\n");
     void *ptr = malloc(100);
     free(ptr);
-    // Depending on implementation, this may cause error/warning
     free(ptr);
 }
 
@@ -79,7 +76,6 @@ void test_double_free() {
 void test_invalid_free() {
     printf("Test 7: Invalid Free\n");
     int dummy;
-    // Freeing non-heap pointer
     free(&dummy);
 }
 
@@ -90,8 +86,8 @@ void test_fragmentation() {
     void *ptr2 = malloc(128);
     void *ptr3 = malloc(32);
 
-    free(ptr2); // free middle
-    void *ptr4 = malloc(100); // should fit if coalescing works correctly
+    free(ptr2);
+    void *ptr4 = malloc(100); 
 
     free(ptr1);
     free(ptr3);
@@ -103,7 +99,6 @@ void test_memory_leak() {
     printf("Test 10: Memory Leak Detection\n");
     void *ptr = malloc(256);
     free(ptr);
-    // If your malloc tracks total free memory, verify it returns to full heap
 }
 
 int main() {
