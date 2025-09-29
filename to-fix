@@ -1,2 +1,0 @@
-1. fix coalescing: currently only shifts adjacent chunks
-2. keep track of heap/ how much memory is free in some sort of way?
