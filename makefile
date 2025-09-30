@@ -17,11 +17,5 @@ memgrind: memgrind.o $(OBJ_COMMON)
 %.o: %.c mymalloc.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-run-test: test
-	./test
-
-run-memgrind: memgrind
-	./memgrind
-
 clean:
 	rm -f *.o $(TARGETS)
