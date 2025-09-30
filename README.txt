@@ -1,4 +1,5 @@
-Julia Dymnicki netid jd1604
+Julia Dymnicki 
+netid jd1604
 
 Test Case 1: malloc() reserves unallocated memory
 Requirement: malloc() reserves unallocated memory.
