@@ -2,7 +2,7 @@ Julia Dymnicki
 netid jd1604
 
 Test Case 1: malloc() reserves unallocated memory
-Requirement: malloc() reserves unallocated memory.
+Requirement: malloc() reserves unallocated memory. The payload does not overlap any other allocated chunks. 
 Detection method: When successful, malloc() returns a pointer to an object that does not overlap with any other allocated object.
 Test: Write a program that allocates several large objects. Once allocation is complete, it fills each object with a distinct byte pattern (e.g., the first object is filled with 1, the second with 2, etc.). Finally, it checks whether each object still contains the written pattern. (That is, writing to one object did not overwrite any other.)
 
@@ -11,7 +11,7 @@ Requirement: free() deallocates memory
 Detection method: After allocating a variety of large objects, check to make sure that free() works by seeing if you can continue to allocate memory until it hits the size of the heap. If you allocate two large objects that are each half the size of the heap, then free them both and attempt to allocate another large object, then free() works as it deallocates those objects from the heap.
 Test: Write a program that allocates several large objects that are close to the maximum size of the heap.  Try to allocate another object which would exceed the size of the heap, verify that the program prints an error message, and empty one of the first few objects and try to allocate memory for the last object again.  Verify that you are able to allocate it. If so, free() deallocates memory from the heap!
 
-Test Case 3: Adjacent free blocks are coalesced
+Test Case 3: Adjacent free blocks are coalesced: Small chunks can coalesce into larger chunks.
 Requirement: malloc() and free() arrange so that adjacent free blocks are coalesced into larger contiguous free blocks to prevent fragmentation.
 Detection method: After freeing adjacent blocks, the memory manager should merge them into a single larger free block. This can be detected by verifying that a subsequent allocation requiring the combined size succeeds, whereas it would fail if the blocks remained fragmented.
 Test: Write a program that allocates three consecutive blocks (A, B, C) of known sizes (e.g., 100 bytes each) then frees block A, then frees block C, then frees block B (which is between A and C).  Then, it attempts to allocate a block of size equal to A + B + C combined and verifies that this large allocation succeeds, proving that the three adjacent free blocks were coalesced into one contiguous block. It then tests both forward and backward coalescing by varying the order of frees.
@@ -42,7 +42,7 @@ Detection method: At program termination, malloc should identify all allocated b
 Test: Write a program that allocates several blocks of memory of varying sizes, frees some of the blocks but leaves others allocated. Before program termination, I will verify that malloc() reports the leaked memory, including the number of leaked blocks, total bytes leaked, and file and line number where the leaked allocation occurred. 
 
 Test Case 9: 8-Byte Alignment of allocated memory
-Requirement: An object allocated by malloc() has 8-byte alignment: each chunk must have a length that is a multiple of 8, and the smallest possible chunk is 16 bytes.  The pointer returned by malloc() must point to the payload, not the chunk header.
+Requirement: An object allocated by malloc() has 8-byte alignment: each chunk must have a length that is a multiple of 8, and the smallest possible chunk is 16 bytes.  The pointer returned by malloc() must point to the payload, not the chunk header. Pointers are properly 8-byte aligned.
 Detection method: For each object allocated, verify that the address returned by malloc() is divisible by 8 and that the pointer is greater than or equal to the starting address of the heap plus the size of the header (smallest chunk size is 16 bytes).
 Test: Write a program that allocates memory for varying types of varying sizes (e.g., double, long long) and check that the allocated payload size is the next multiple of 8 ≥ requested size (e.g., malloc(1) = payload 8 bytes, total chunk 16. malloc(20) =  payload 24 bytes, total chunk 32. malloc(32) = payload 32 bytes, total chunk 40.)
 
