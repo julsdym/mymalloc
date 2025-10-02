@@ -260,11 +260,28 @@ void nine(){
     REPORT("Test: 8-byte alignment", (ok && two));
 }
 
-// Test 9: Null and Zero Behavior
+// Test 10: Null and Zero Behavior
 void ten(){
     void *p1 = malloc(0);
     free(NULL); 
     REPORT("Test: Null & Zero Behavior", p1 == NULL);
+}
+
+// Test 11: Contents of allocated object do not change
+void eleven(){
+
+    // Payload remains unchanged
+    char *p = malloc(16);
+    strcpy(p, "Hello");
+
+    void *q = malloc(32);
+    void *r = malloc(64);
+    free(q);
+    free(r);
+    bool ok = (strcmp(p, "Hello") == 0);
+    REPORT("Test: Contents unchanged", ok);
+    free(p);
+
 }
 
 int main(int argc, char *argv[]) {
@@ -273,6 +290,7 @@ int main(int argc, char *argv[]) {
     three();
     nine();
     ten();
+    eleven();
     printf("Number of tests passed: %d\n", tests_passed);
     printf("Number of tests failed: %d\n", tests_failed);
     printf("All safe tests completed.\n");
