@@ -51,6 +51,20 @@ Requirement: Free is able to free a null, malloc should not crash when asked to 
 Detection Method: Attempt to free(NULL) and malloc(0). Should return null pointer for malloc(0).
 Test: Write a program that writes free(NULL) and malloc(0).
 
+Test Case 11: Data and Metadata are Separate and Safe
+Requirement: The run-time system makes no assumptions about the data written to the payload of a chunk. The run-time cannot extract any information by looking at the payload of an allocated chunk. Clients may write to any byte received from malloc() without causing problems for the run-time system.  Any data it writes to chunk headers or to the payloads of unallocated chunks will be not be read or updated by client code.
+Detection Method: Create a variable, put information in that variable, check to see if it stays the same after allocating and freeing other blocks.  Chunks are separate and the system does not touch the payload / data of chunks.
+Test: Write a program that allocates memory for a variable, puts data in that variable, then allocates other objects and frees them, then checks to see if the original data remains unchanged and the system did not touch the payload of the data.
+
+// Note: Tests four, five, six, seven, eight need to be ran with "./test double" "./test invalid" "./test mid" "./test leak" "./test full" in order to be tested as they will cause an error message and for the program to exit.
+To run test 4: type in "./test invalid"
+To run test 5: type in "./test mid"
+To run test 6: type in "./test double"
+To run test 7: type in "./test full"
+To run test 8: type in "./test leak"
+
+
+
 
 
 
