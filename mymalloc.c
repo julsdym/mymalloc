@@ -30,7 +30,7 @@ static header *get_next_header(header *curr) {
     char *heap_end = heap.bytes + MEMLENGTH;
     
     if (next_addr >= heap_end) {
-        return NULL; // Past end of heap
+        return NULL; 
     }
     return (header *)next_addr;
 }
@@ -89,26 +89,21 @@ static void split_chunk(header *chunk, size_t req_size) {
     size_t min_remaining = sizeof(header) + 8; // Minimum size for a new block
 
     if (chunk->size >= total_req + min_remaining) {
-        // Create new header at the split point
         header *new_header = (header *)((char *)chunk + total_req);
         new_header->size = chunk->size - total_req;
         new_header->is_free = 1;
-        
-        // Update current chunk size
         chunk->size = total_req;
     }
 }
 
-// Merge adjacent free chunks
+// Coalescing Function
 static void coalesce(void) {
     for (header *curr = get_first_header(); curr; curr = get_next_header(curr)) {
         if (curr->is_free) {
             header *next = get_next_header(curr);
-            
-            // Merge with consecutive free blocks
             while (next && next->is_free) {
                 curr->size += next->size;
-                next = get_next_header(curr); // Get new next after merger
+                next = get_next_header(curr); 
             }
         }
     }
