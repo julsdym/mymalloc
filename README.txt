@@ -44,7 +44,7 @@ Test: Write a program that allocates several blocks of memory of varying sizes, 
 Test Case 9: 8-Byte Alignment of allocated memory
 Requirement: An object allocated by malloc() has 8-byte alignment: each chunk must have a length that is a multiple of 8, and the smallest possible chunk is 16 bytes.  The pointer returned by malloc() must point to the payload, not the chunk header. Pointers are properly 8-byte aligned.
 Detection method: For each object allocated, verify that the address returned by malloc() is divisible by 8 and that the pointer is greater than or equal to the starting address of the heap plus the size of the header (smallest chunk size is 16 bytes).
-Test: Write a program that allocates memory for varying types of varying sizes (e.g., double, long long) and check that the allocated payload size is the next multiple of 8 ≥ requested size (e.g., malloc(1) = payload 8 bytes, total chunk 16. malloc(20) =  payload 24 bytes, total chunk 32. malloc(32) = payload 32 bytes, total chunk 40.)
+Test: Write a program that allocates memory for varying sizes and check that the allocated payload size is the next multiple of 8 ≥ requested size (e.g., malloc(1) = payload 8 bytes, total chunk 16. malloc(20) =  payload 24 bytes, total chunk 32. malloc(32) = payload 32 bytes, total chunk 40.)
 
 Test Case 10: Null & Free Behavior
 Requirement: Free is able to free a null, malloc should not crash when asked to allocate 0 bytes.
