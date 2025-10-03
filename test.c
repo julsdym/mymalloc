@@ -178,7 +178,7 @@ void three(){
 // Test 4:  Error Detection - calling free() with address not from malloc()
 void four(){
     int x = 42;
-    free(&x); // Should print error message
+    free(&x); 
 }
 
 // Test 5: Error Detection - free() with address not at chunk start
@@ -186,7 +186,7 @@ void five(){
     void *p = malloc(100);
     assert(p != NULL);
     void *mid = (char*)p + 10;
-    free(mid); // Should print error message
+    free(mid); 
     free(p);
 }
 
@@ -195,16 +195,13 @@ void six(){
     void *p = malloc(100);
     assert(p != NULL);
     free(p);
-    free(p); // Should print error message  
+    free(p); 
 }
 
 // Test 7: Heap full 
 void seven() {
-    // Try to allocate progressively until failure
     void *ptrs[100];
     int i = 0;
-
-    // Allocate until NULL
     while (i < 100 && (ptrs[i] = malloc(500)) != NULL) {
     i++;
     }
@@ -224,7 +221,7 @@ void seven() {
 
 // Test 8: Error Detection - memory leak detection at program exit
 void eight(){
-    malloc(1000); // Should print leak message at program exit
+    malloc(1000); 
 }
 
 // Helper to get header from payload pointer
@@ -245,7 +242,6 @@ void nine(){
     for (int i = 0; i < 7; i++) {
         void *p = malloc(test_sizes[i]);
         assert(p != NULL);
-        // Check 8-byte alignment
         if (((uintptr_t)p % 8) != 0) {
             ok = false;
             continue;
@@ -269,11 +265,8 @@ void ten(){
 
 // Test 11: Contents of allocated object do not change
 void eleven(){
-
-    // Payload remains unchanged
     char *p = malloc(16);
     strcpy(p, "Hello");
-
     void *q = malloc(32);
     void *r = malloc(64);
     free(q);
