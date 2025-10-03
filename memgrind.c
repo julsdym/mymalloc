@@ -6,14 +6,14 @@
 #include "mymalloc.h"
 
 
-//function to get current time in milliseconds
+// function to get current time in milliseconds
 long get_time(){
     struct timeval tv;
     gettimeofday(&tv, NULL);
     return tv.tv_sec * 1000000.0 + tv.tv_usec;
 }
 
-//Task 1: allocate 120 1-byte objects then immediately free
+// Task 1: allocate 120 1-byte objects then immediately free
 void task1(){
     for(int i=0; i<120;i++){
         void *p = malloc(1);
@@ -21,7 +21,7 @@ void task1(){
     }
 }
 
-//Task 2: allocate 120 1-byte objects, store pointers then free all
+// Task 2: allocate 120 1-byte objects, store pointers then free all
 void task2(){
     void *p[120];
     for(int i=0; i<120;i++){
@@ -32,7 +32,7 @@ void task2(){
     }
 }
 
-//Task 3: Random allocation/deallocation until 120 allocations done
+// Task 3: Random allocation/deallocation until 120 allocations done
 void task3(){
    void *p[120];
    int count = 0;
@@ -41,7 +41,7 @@ void task3(){
         p[i] = NULL;
     }
 
-    //random choice: 0 to allocate, 1 to free
+    // random choice: 0 to allocate, 1 to free
     while (total_allocated < 120){
         int choice = rand() % 2;
         if(choice ==0 && count < 120){
@@ -74,14 +74,14 @@ void task3(){
     }
 }
 
-//Task 4: Linked List operations
+// Task 4: Linked List operations
 void task4(){
    typedef struct node{
         int data;
         struct node *next;
    } node;
 
-   //build linked list of 60 nodes
+   // build linked list of 60 nodes
    node *head = NULL;
    for (int i=0;i<60;i++){
         node *new = malloc(sizeof(node));
@@ -90,7 +90,7 @@ void task4(){
         head = new;
    }
 
-   //remove every other node
+   // remove every other node
    node *current = head;
    while (current != NULL && current->next != NULL){
         node *del = current->next;
@@ -99,7 +99,7 @@ void task4(){
         current = current->next;
    }
 
-   //add 30 more nodes
+   // add 30 more nodes
    for(int i=0; i<30;i++){
         node *new = malloc(sizeof(node));
         new->data = i+100;
@@ -107,7 +107,7 @@ void task4(){
         head = new;
    }
 
-   //free remaining nodes
+   // free remaining nodes
    while (head != NULL){
         node *temp = head;
         head = head->next;
@@ -115,7 +115,7 @@ void task4(){
    }
 }
 
-//Task 5: Binary Tree Operations
+// Task 5: Binary Tree Operations
 void task5(){
     typedef struct tree_node{
         int val;
@@ -125,7 +125,7 @@ void task5(){
 
     tree_node *node[40];
 
-    //initialize tree nodes 
+    // initialize tree nodes 
     for(int i=0;i<40;i++){
         node[i] = malloc(sizeof(tree_node));
         node[i]->val = i;
@@ -133,7 +133,7 @@ void task5(){
         node[i]->right = NULL;
     }
 
-    //build binary tree
+    // build binary tree
     for (int i=20;i<30;i++){
         free(node[i]);
         node[i] = malloc(sizeof(tree_node));
@@ -141,14 +141,14 @@ void task5(){
         node[i]->right = NULL;
         node[i]->left = NULL;
     }
-
+// free objects
     for(int i=0; i<40; i++){
         free(node[i]);
     }
    
 }
 
-//run each task once
+// run each task once
 void run_workload_once(){
     task1();
     task2();
@@ -159,7 +159,7 @@ void run_workload_once(){
 
 int main(){
     srand((unsigned)time(NULL));
-    //run the workload 50 times
+    // run the workload 50 times
     long start = get_time();
     for (int i=0; i<50;i++){
         run_workload_once();
