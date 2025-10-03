@@ -183,10 +183,9 @@ void four(){
 
 // Test 5: Error Detection - free() with address not at chunk start
 void five(){
-    void *p = malloc(100);
+    int *p = malloc(sizeof(int)*2);
     assert(p != NULL);
-    void *mid = (char*)p + 10;
-    free(mid); 
+    free(p + 1);
     free(p);
 }
 
